@@ -2,7 +2,7 @@
 
 Visualização 3D interativa (Three.js) da **fragmentação e da conectividade da vegetação natural** no Corredor Ecológico da Bacia do Rio São Lourenço (BHSL), Mato Grosso, Brasil, entre 2014 e 2024. Os dados de cobertura são do MapBiomas Coleção 11.
 
-**Página:** `https://<usuario>.github.io/fragconn-3d-bhsl/`
+**Página:** https://bonnexd01.github.io/fragconn-3d-bhsl/
 
 ![Visão do corredor: relevo pela distância à borda, cor pela mudança 2014–2024 e rede de conectividade](docs/preview_corredor.png)
 
