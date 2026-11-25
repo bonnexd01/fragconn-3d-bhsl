@@ -23,7 +23,8 @@ Visualização 3D interativa (Three.js) da **fragmentação e da conectividade d
 
 | Modo / camada | Conteúdo |
 |---|---|
-| **Corredor** | o corredor inteiro em blocos de 8 × 8 células (240 m). A altura é a distância média à borda (satura em 1 km): núcleos grandes viram platôs, e bordas e ilhotas ficam rentes ao chão. |
+| **Mapa** | imagem de satélite do planeta inteiro (Esri World Imagery, via MapLibre GL). A página abre no globo e voa até o corredor, que aparece inteiro em 3D por cima (Three.js dentro do mapa), com opacidade ajustável; o exagero vertical diminui sozinho ao aproximar. A grade UTM 21S é assentada no Web Mercator por uma malha de controle de 17 × 17 pontos calculada com pyproj (erro < 1 m). Clicar numa janela no mapa voa até ela e abre a cena 3D no canto inferior direito. |
+| **Corredor** | blocos de 8 × 8 células (240 m). A altura é a distância média à borda (satura em 1 km): núcleos grandes viram platôs, e bordas e ilhotas ficam rentes ao chão. |
 | **Cor** | **morfologia** (núcleo > 90 m da borda, borda ≤ 90 m, ilhota = fragmento sem núcleo), **mudança** 2014 → 2024 (perda e ganho), **importância** do fragmento (dPC) ou **processo espacial** de Bogaert et al. (2004) em células de 5 km. |
 | **Ano** | 2014 ou 2024. |
 | **Rede** | grafo planar de conectividade com fragmentos ≥ 10 ha (2014: 1.139 nós e 2.928 ligações; 2024: 1.144 e 2.938). Cada esfera é um fragmento, com tamanho ~ área e cor pela importância. Cada arco é uma ligação, mais claro quanto mais curta a distância borda a borda (probabilidade 0,5 a 1.500 m). Os rótulos C1–C5 marcam os cinco maiores conectores. |

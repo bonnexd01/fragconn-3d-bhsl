@@ -59,6 +59,26 @@ def enc_log(v):        # importância (%) em escala log: 1e-4 .. 100 -> 1..250; 
     return e.astype(np.uint8)
 
 
+def georref(x0, y0, W, H, pix):
+    """Centro da grade em lon/lat, rotação da grade UTM em relação ao leste verdadeiro (rad) e fator de escala,
+    para o visualizador assentar a grade de 30 m (EPSG:31981) no mapa Web Mercator."""
+    import math
+    from pyproj import Geod, Transformer
+    inv = Transformer.from_crs("EPSG:31981", "EPSG:4326", always_xy=True)
+    cx, cy = x0 + W / 2 * pix, y0 - H / 2 * pix
+    lon_c, lat_c = inv.transform(cx, cy)
+    lon_e, lat_e = inv.transform(cx + 10_000, cy)
+    az, _, dist = Geod(ellps="GRS80").inv(lon_c, lat_c, lon_e, lat_e)
+    # malha de controle 17 x 17 (lon/lat dos nós da grade), para o navegador interpolar e projetar em Web Mercator
+    n = 17
+    ctrl = []
+    for j in range(n):
+        for i in range(n):
+            lo, la = inv.transform(x0 + i / (n - 1) * W * pix, y0 - j / (n - 1) * H * pix)
+            ctrl.append([round(lo, 7), round(la, 7)])
+    return [round(lon_c, 7), round(lat_c, 7)], math.radians(90 - az), dist / 10_000, {"n": n, "ll": ctrl}
+
+
 def log(*a):
     print(*a, flush=True)
 
@@ -242,9 +262,12 @@ def main():
         "processos": nt["processos"], "celulas": nt["celulas"],
     }
 
+    cll, th, kk, ctrl = georref(x0, y0, W, H, PIX)
+    log(f"centro {cll}, rotação da grade {th * 180 / 3.141592653589793:.3f}°, escala {kk:.5f}")
     dados = {
         "meta": {"W": W, "H": H, "pix": PIX, "bloco": BLOCO, "Wb": Wb, "Hb": Hb, "d_cap": D_CAP, "d_passo": D_PASSO,
-                 "d_focal": 1500, "x0": x0, "y0": y0, "crs": "EPSG:31981"},
+                 "d_focal": 1500, "x0": x0, "y0": y0, "crs": "EPSG:31981",
+                 "centro_ll": cll, "theta": th, "k": kk, "ctrl": ctrl},
         "geral": geral, "rede": info, "janelas": janelas, "limite": limite, "numeros": numeros,
     }
     js = json.dumps(dados, ensure_ascii=False, separators=(",", ":"))
