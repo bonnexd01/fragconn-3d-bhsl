@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "Se usar este visualizador ou os dados derivados, cite assim. Dados e código da análise: https://doi.org/10.5281/zenodo.24137643"
+title: "Remanescentes em 3D: fragmentação e conectividade da vegetação natural no Corredor Ecológico da Bacia do Rio São Lourenço (MT), 2014–2024"
+abstract: >-
+  Visualizador 3D (Three.js) da morfologia núcleo/borda/ilhota, da conversão 2014–2024,
+  dos processos espaciais de Bogaert e do grafo de conectividade (dPC) da vegetação natural
+  do Corredor Ecológico da Bacia do Rio São Lourenço (MapBiomas Coleção 11).
+authors:
+  - family-names: Aranha
+    given-names: David Albuquerque
+    orcid: "https://orcid.org/0009-0005-1631-1676"
+    affiliation: "Universidade Federal de Rondonópolis (UFR)"
+type: software
+license: MIT
+date-released: "2026-11-25"
+version: "1.0.0"
+references:
+  - type: dataset
+    title: "Connectivity of natural vegetation in a Cerrado–Pantanal ecological corridor declined nearly twice as fast as habitat area: data and code"
+    authors:
+      - family-names: Aranha
+        given-names: David Albuquerque
+    doi: "10.5281/zenodo.24137643"
+keywords:
+  - habitat fragmentation
+  - landscape connectivity
+  - Cerrado
+  - MapBiomas
+  - three.js

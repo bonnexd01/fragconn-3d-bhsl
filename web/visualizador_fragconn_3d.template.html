@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fragmentação 3D · BHSL</title>
+<meta name="description" content="Fragmentação e conectividade da vegetação natural no Corredor Ecológico da Bacia do Rio São Lourenço (MT), 2014–2024, em 3D: morfologia núcleo/borda/ilhota, perda, processos de Bogaert e grafo de conectividade (dPC).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='9' cy='20' r='6' fill='%232f9a6a'/%3E%3Ccircle cx='23' cy='11' r='5' fill='%23c9d66b'/%3E%3Cpath d='M13 17L19 13' stroke='%23f4dc9c' stroke-width='2.5'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#08110f; --bg2:#122420; --panel:rgba(12,22,20,.74); --line:rgba(244,220,156,.16);
+  --tx:#e8efe9; --tx2:#9fb3aa; --acc:#f4dc9c; --acc2:#c99440; --chip:rgba(255,255,255,.05);
+  --chip-on:rgba(244,220,156,.16); --matriz:#26322d; --sombra:0 18px 50px rgba(0,0,0,.45);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#d5eadd; --bg2:#f1f6ef; --panel:rgba(250,252,247,.84); --line:rgba(20,60,50,.16);
+    --tx:#12201b; --tx2:#4d625a; --acc:#8a5a14; --acc2:#b07a28; --chip:rgba(10,40,30,.05);
+    --chip-on:rgba(176,122,40,.16); --matriz:#c3ccc5; --sombra:0 18px 50px rgba(20,50,40,.18);
+  }
+}
+:root[data-theme="light"]{
+  --bg:#d5eadd; --bg2:#f1f6ef; --panel:rgba(250,252,247,.84); --line:rgba(20,60,50,.16);
+  --tx:#12201b; --tx2:#4d625a; --acc:#8a5a14; --acc2:#b07a28; --chip:rgba(10,40,30,.05);
+  --chip-on:rgba(176,122,40,.16); --matriz:#c3ccc5; --sombra:0 18px 50px rgba(20,50,40,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:radial-gradient(120% 90% at 55% 35%,var(--bg2) 0%,var(--bg) 70%);color:var(--tx);
+  font:14px/1.45 Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#cena{position:fixed;inset:0}
+#cena canvas{display:block;outline:none}
+.painel{position:fixed;background:var(--panel);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);
+  border:1px solid var(--line);border-radius:18px;box-shadow:var(--sombra);z-index:5}
+#pnl-esq{top:16px;left:16px;width:318px;max-height:calc(100vh - 32px);overflow:auto;padding:18px 18px 14px}
+#pnl-dir{top:16px;right:16px;width:310px;max-height:calc(100vh - 32px);overflow:auto;padding:16px 16px 12px}
+.kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);font-weight:700}
+h1{font:800 25px/1.08 "Bricolage Grotesque",sans-serif;margin:6px 0 4px;letter-spacing:-.01em}
+h2{font:700 13px/1.2 "Bricolage Grotesque",sans-serif;margin:0 0 8px;letter-spacing:.02em;color:var(--acc)}
+.sub{margin:0 0 14px;color:var(--tx2);font-size:12.5px}
+.rot{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tx2);font-weight:700;margin:14px 0 6px}
+.rot output{font:800 13px "Bricolage Grotesque";color:var(--tx);letter-spacing:0;text-transform:none}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button,.chips button,.acoes button{font:inherit;color:var(--tx);background:transparent;border:0;cursor:pointer}
+.seg button{padding:8px 6px;border-radius:9px;font-weight:700}
+.seg button.on{background:var(--chip-on);color:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--chip);font-weight:600;font-size:13px;line-height:1.15;text-align:left}
+.chips button small{display:block;font-size:10.5px;color:var(--tx2);font-weight:500}
+.chips button.on{background:var(--chip-on);border-color:var(--acc2);color:var(--acc)}
+.chips.ano button{flex:1 1 0;text-align:center;font:800 16px "Bricolage Grotesque"}
+input[type=range]{width:100%;accent-color:var(--acc2)}
+.tg{display:flex;align-items:center;gap:8px;font-size:13px;margin:5px 0;cursor:pointer}
+.tg input{accent-color:var(--acc2)}
+.janelas{display:flex;flex-direction:column;gap:6px}
+.janela{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;text-align:left;padding:8px 10px;border-radius:12px;
+  border:1px solid var(--line);background:var(--chip);color:var(--tx);font:inherit;cursor:pointer}
+.janela b{font:800 15px "Bricolage Grotesque";color:var(--acc);text-align:center}
+.janela span{font-size:12.5px;font-weight:600;line-height:1.25}
+.janela small{display:block;color:var(--tx2);font-weight:500;font-size:11px}
+.janela.on{border-color:var(--acc2);background:var(--chip-on)}
+.acoes{display:flex;gap:6px;margin-top:14px}
+.acoes button{flex:1;padding:7px 6px;border-radius:10px;border:1px solid var(--line);background:var(--chip);font-weight:600;font-size:12.5px}
+.acoes button:hover,.chips button:hover,.janela:hover{border-color:var(--acc2)}
+details{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;font-size:12.5px;color:var(--tx2)}
+summary{cursor:pointer;color:var(--tx);font-weight:700}
+details p{margin:8px 0}
+code{font-size:12px;color:var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:5px 4px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left;color:var(--tx2);font-weight:500}
+thead th{font-size:11px;letter-spacing:.06em;color:var(--tx2);font-weight:700}
+td.neg{color:#f08a7e;font-weight:700}
+td.pos{color:#7fd6a4;font-weight:700}
+th.atual,td.atual{color:var(--acc);font-weight:800}
+.fonte{font-size:10.5px;color:var(--tx2);margin:6px 0 14px}
+.barras{display:flex;flex-direction:column;gap:4px;font-size:11.5px}
+.barra{display:grid;grid-template-columns:62px 1fr 44px;gap:6px;align-items:center}
+.barra i{display:block;height:8px;border-radius:4px;background:#e0584f}
+.barra span:last-child{text-align:right;color:var(--tx)}
+.barra span:first-child{color:var(--tx2)}
+.procs{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:11.5px}
+.procs div{display:flex;justify-content:space-between;gap:6px}
+.procs i,.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+#grafico svg{width:100%;height:auto;display:block}
+#legenda{left:50%;bottom:16px;transform:translateX(-50%);padding:10px 16px 8px;min-width:320px;max-width:min(640px,calc(100vw - 700px));display:flex;flex-direction:column;gap:5px}
+#leg-tit{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);font-weight:700;display:flex;justify-content:space-between;gap:16px}
+#leg-barra{height:10px;border-radius:6px}
+#leg-ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--tx2)}
+#leg-extra,#leg-cat{display:flex;gap:6px 14px;font-size:11px;color:var(--tx2);flex-wrap:wrap}
+#dica{position:fixed;z-index:8;pointer-events:none;background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);
+  border-radius:12px;padding:9px 11px;font-size:12px;min-width:200px;display:none;box-shadow:var(--sombra)}
+#dica h3{margin:0 0 4px;font:800 12.5px "Bricolage Grotesque";color:var(--acc)}
+#dica table{font-size:11.5px}
+#dica td,#dica th{padding:2px 3px}
+#rotulos{position:fixed;inset:0;pointer-events:none;z-index:4}
+.rotulo{position:absolute;left:0;top:0;white-space:nowrap;font:800 12px "Bricolage Grotesque";color:var(--bg);background:var(--acc);
+  padding:3px 8px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.rotulo.prod{font-size:15px;padding:4px 12px}
+.rotulo.con{background:#fff;color:#08110f;font-size:11px;padding:2px 7px}
+.rotulo.clic{pointer-events:auto;cursor:pointer}
+#carregando{position:fixed;inset:0;display:grid;place-items:center;z-index:20;background:var(--bg);color:var(--tx2);font-weight:600;transition:opacity .4s}
+#carregando.fim{opacity:0;pointer-events:none}
+#bt-painel{display:none}
+@media (max-width:1100px){ #legenda{max-width:calc(100vw - 32px);bottom:auto;top:auto} }
+@media (max-width:760px){
+  #pnl-esq{top:auto;bottom:8px;left:8px;right:8px;width:auto;max-height:46vh;padding:14px}
+  #pnl-dir{top:8px;left:8px;right:8px;width:auto;max-height:40vh;display:none}
+  #pnl-dir.aberto{display:block}
+  #legenda{bottom:auto;top:8px;min-width:0;width:calc(100% - 16px);max-width:none}
+  body.dir-aberto #legenda{display:none}
+  #bt-painel{display:block}
+  h1{font-size:21px}
+}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="cena"></div>
+<div id="rotulos"></div>
+
+<section class="painel" id="pnl-esq">
+  <div class="kicker">Fragmentação · Conectividade · BHSL</div>
+  <h1>Remanescentes em 3D</h1>
+  <p class="sub">Vegetação natural (MapBiomas Col. 11: floresta, savana, campo, campo alagado) no Corredor Ecológico da Bacia do Rio São Lourenço (MT) · 30 m</p>
+
+  <div class="seg" id="modo">
+    <button data-modo="geral" class="on">Corredor</button>
+    <button data-modo="janela">Janela 3D</button>
+  </div>
+
+  <div class="rot">Ano</div>
+  <div class="chips ano" id="ano">
+    <button data-y="2014">2014</button>
+    <button data-y="2024" class="on">2024</button>
+  </div>
+
+  <div class="rot">Cor</div>
+  <div class="chips" id="cor">
+    <button data-c="morf" class="on">Morfologia<small>núcleo · borda · ilhota</small></button>
+    <button data-c="mud">Mudança<small>perda · ganho</small></button>
+    <button data-c="imp">Importância<small>dPC do fragmento</small></button>
+    <button data-c="proc" id="bt-proc">Processo<small>Bogaert · 5 km</small></button>
+  </div>
+
+  <div class="rot">Altura</div>
+  <div class="chips" id="alt">
+    <button data-a="prof" class="on">Distância à borda</button>
+    <button data-a="plano">Plano</button>
+  </div>
+
+  <div class="rot">Escala vertical <output id="ex-v"></output></div>
+  <input type="range" id="ex" min="0.5" max="12" step="0.5">
+
+  <div class="rot">Janelas de detalhe · 30 m</div>
+  <div class="janelas" id="lista-janelas"></div>
+
+  <div id="bloco-janela">
+    <label class="tg"><input type="checkbox" id="comparar"> Comparar 2014 · 2024 lado a lado</label>
+  </div>
+
+  <div style="margin-top:12px">
+    <label class="tg"><input type="checkbox" id="tg-rede" checked> Rede de conectividade (grafo)</label>
+    <label class="tg"><input type="checkbox" id="tg-lim" checked> Limite do corredor</label>
+    <label class="tg"><input type="checkbox" id="tg-giro"> Girar a cena</label>
+  </div>
+
+  <div class="acoes">
+    <button id="bt-reset">Recentrar</button>
+    <button id="bt-png">Salvar PNG</button>
+    <button id="bt-tema">Tema</button>
+    <button id="bt-painel">Números</button>
+  </div>
+
+  <details>
+    <summary>Como ler</summary>
+    <p><b>Altura:</b> distância de cada pixel de vegetação natural até a matriz antrópica mais próxima, saturada em 1 km. Núcleos grandes viram platôs; bordas e ilhotas ficam rentes ao chão. Não é altura da vegetação.</p>
+    <p><b>Morfologia:</b> núcleo = mais de 90 m da borda; borda = faixa de até 90 m de um fragmento com núcleo; ilhota = fragmento sem núcleo.</p>
+    <p><b>Mudança:</b> vegetação natural de 2014 convertida em uso antrópico em 2024 (perda) e o inverso (ganho). Na visão do corredor as frações estão realçadas para ficarem visíveis.</p>
+    <p><b>Rede:</b> cada esfera é um fragmento ≥ 10 ha (tamanho ~ área; cor = importância). As linhas são as ligações do grafo planar; quanto mais curta a distância borda a borda, mais clara a linha (probabilidade de dispersão 0,5 a <span id="dfoc"></span> m). Importância: dPC 2024 (intra + fluxo + conector); em 2014, só intra + fluxo.</p>
+    <p><b>Processo:</b> árvore de decisão de Bogaert et al. (2004) aplicada a células de 5 km, 2014 → 2024.</p>
+    <p>Arraste para girar, role para aproximar, botão direito para deslocar. Passe o cursor sobre a cena para ler os valores.</p>
+    <p>Visual inspirado em <i>lidar-mangrove-canopy</i> (linaq11).</p>
+  </details>
+</section>
+
+<aside class="painel" id="pnl-dir">
+  <h2>Corredor · 2014 → 2024</h2>
+  <table id="tb-corredor"></table>
+  <div id="grafico"></div>
+  <p class="fonte" id="eca-faixa"></p>
+  <h2>Taxa de perda por distância à borda</h2>
+  <div class="barras" id="barras"></div>
+  <p class="fonte">% da vegetação de 2014 em cada faixa que foi convertida até 2024.</p>
+  <h2 id="tit-proc">Processos espaciais</h2>
+  <div class="procs" id="procs"></div>
+  <p class="fonte">Fonte: data/A01, B01, E01 e numeros_texto.json (fragconn_analise.py; Zenodo 10.5281/zenodo.24137643).</p>
+  <div id="st-janela"></div>
+</aside>
+
+<div class="painel" id="legenda">
+  <div id="leg-tit"><span id="leg-nome"></span><span id="leg-ano"></span></div>
+  <div id="leg-cont"></div>
+  <div id="leg-extra"></div>
+</div>
+
+<div id="dica"></div>
+<div id="carregando">Descompactando os dados de fragmentação…</div>
+
+<script>window.DADOS = /*__DADOS__*/null;</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const D = window.DADOS, M = D.meta;
+const ND = 255;
+const MORF = { 0: '#26322d', 1: '#2f9a6a', 2: '#c9d66b', 3: '#f39a3b' };
+const MORF_NOME = { 0: 'matriz antrópica', 1: 'núcleo (> 90 m)', 2: 'borda (≤ 90 m)', 3: 'ilhota (sem núcleo)' };
+const PERDA = '#e0584f', GANHO = '#5cc8d8';
+const PROC = { 1: ['agregação', '#2f9a6a'], 2: ['atrição', '#e2c84f'], 3: ['criação', '#8cc35a'], 4: ['dissecação', '#f39a3b'],
+  5: ['ampliação', '#5cc8d8'], 6: ['fragmentação', '#e0584f'], 7: ['perfuração', '#c06c84'], 8: ['encolhimento', '#b98b4e'], 9: ['estável', '#9fb3aa'] };
+const PROC_CHAVE = { agregacao: 1, atricao: 2, criacao: 3, dissecacao: 4, ampliacao: 5, fragmentacao: 6, perfuracao: 7, encolhimento: 8, estavel: 9 };
+const RAMPA_HEX = ['#123a3f', '#1f6b5c', '#2f9a6a', '#8cc35a', '#e2c84f', '#f39a3b'];
+const RAMPA = RAMPA_HEX.map(h => new THREE.Color(h));
+const C = h => new THREE.Color(h);
+
+const S = { modo: 'geral', ano: '2024', cor: 'morf', alt: 'prof', ex: { geral: 4, janela: 0.5 },
+            janela: 0, comparar: false, rede: true, lim: true };
+
+// ---------- utilidades ----------
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const fmt = (v, d = 1) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtImp = v => v == null ? '–' : v >= 1 ? fmt(v, 1) + '%' : v >= 0.01 ? fmt(v, 2) + '%' : fmt(v, 4) + '%';
+function rampa(t, c) {
+  t = clamp(t, 0, 1); const s = t * (RAMPA.length - 1);
+  const i = Math.min(RAMPA.length - 2, Math.floor(s)), f = s - i, a = RAMPA[i], b = RAMPA[i + 1];
+  c.r = a.r + (b.r - a.r) * f; c.g = a.g + (b.g - a.g) * f; c.b = a.b + (b.b - a.b) * f; return c;
+}
+const impT = v => clamp((Math.log10(v) + 4) / 6, 0, 1);                     // 1e-4..100 % -> 0..1
+const decImp = v => v === 0 ? 0 : Math.pow(10, (v - 1) / 249 * 6 - 4);
+async function dz(b64) {
+  const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const s = new Blob([bin]).stream().pipeThrough(new DecompressionStream('deflate'));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const descarta = g => g.traverse(o => { o.geometry?.dispose(); if (o.material) [].concat(o.material).forEach(m => m.dispose()); });
+const xy = (col, lin) => [(col - M.W / 2) * M.pix, (M.H / 2 - lin) * M.pix];
+
+// ---------- cena ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+$('cena').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 10, 3e6);
+camera.up.set(0, 0, 1);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08; controls.zoomToCursor = true;
+controls.maxPolarAngle = Math.PI * 0.49; controls.autoRotateSpeed = 0.6;
+const hemi = new THREE.HemisphereLight(0xeef6ee, 0x2a2418, 1.2); hemi.position.set(0, 0, 1); scene.add(hemi);
+const sol = new THREE.DirectionalLight(0xfff0d8, 2.0); sol.position.set(-1, 1, 1); scene.add(sol);
+
+const gGeral = new THREE.Group(), escGeral = new THREE.Group(), gJanela = new THREE.Group();
+gGeral.add(escGeral); scene.add(gGeral, gJanela);
+
+// ---------- dados ----------
+const G = {};
+const cacheJ = {};
+async function dadosJanela(w) {
+  if (cacheJ[w]) return cacheJ[w];
+  const jd = D.janelas[w], o = { mud: await dz(jd.mud) };
+  for (const y of ['2014', '2024']) {
+    const d = jd.dados[y];
+    o[y] = { morf: await dz(d.morf), prof: await dz(d.prof), imp: await dz(d.imp) };
+    const b = await dz(d.no); o[y].no = new Uint16Array(b.buffer, b.byteOffset, b.byteLength / 2);
+  }
+  return (cacheJ[w] = o);
+}
+
+// ---------- cores por bloco/célula ----------
+const cTmp = new THREE.Color(), cA = new THREE.Color();
+function corBloco(k, c) {
+  const y = S.ano, fn = G['nucleo' + y][k] / 250, fb = G['borda' + y][k] / 250, fi = G['ilhota' + y][k] / 250;
+  const fm = Math.max(0, 1 - fn - fb - fi);
+  const mix = (pesos) => { c.setRGB(0, 0, 0); for (const [h, w] of pesos) { cTmp.set(h); c.r += cTmp.r * w; c.g += cTmp.g * w; c.b += cTmp.b * w; } return c; };
+  if (S.cor === 'morf') return mix([[css('--matriz'), fm], [MORF[1], fn], [MORF[2], fb], [MORF[3], fi]]);
+  if (S.cor === 'proc') { const p = G.proc[k]; return p ? c.set(PROC[p][1]) : c.set(css('--matriz')); }
+  // base esmaecida pela fração de habitat
+  mix([[css('--matriz'), fm], ['#3d6b58', fn + fb + fi]]);
+  if (S.cor === 'mud') {
+    const fl = G.perda[k] / 250, fg = G.ganho[k] / 250;
+    if (fl > 0) c.lerp(cA.set(PERDA), Math.min(1, 0.35 + fl * 5));
+    if (fg > 0) c.lerp(cA.set(GANHO), Math.min(1, 0.35 + fg * 5));
+    return c;
+  }
+  const v = G['imp' + y][k]; if (v) rampa(impT(decImp(v)), c);
+  return c;
+}
+
+// ---------- visão geral ----------
+let geoG, meshG, limG = [], retG = [];
+function iniciarGeral() {
+  const { Wb, Hb, bloco: B } = M, n = Wb * Hb;
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < Hb; i++) for (let j = 0; j < Wb; j++) {
+    const k = i * Wb + j, [x, y] = xy((j + 0.5) * B, (i + 0.5) * B); pos[3 * k] = x; pos[3 * k + 1] = y;
+  }
+  geoG = new THREE.BufferGeometry();
+  geoG.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geoG.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  const idx = [], dt = G.dentro;
+  for (let i = 0; i < Hb - 1; i++) for (let j = 0; j < Wb - 1; j++) {
+    const a = i * Wb + j, b = a + 1, c = a + Wb, d = c + 1;
+    if (dt[a] && dt[b] && dt[c] && dt[d]) idx.push(a, c, b, b, c, d);
+  }
+  geoG.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
+  meshG = new THREE.Mesh(geoG, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  escGeral.add(meshG);
+  for (const anel of D.limite) {
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(anel.map(([c, l]) => new THREE.Vector3(...xy(c, l), 0))),
+      new THREE.LineBasicMaterial({ color: 0xf4dc9c, transparent: true, opacity: 0.85, depthTest: false }));
+    ln.renderOrder = 10; limG.push(ln); gGeral.add(ln);
+  }
+  D.janelas.forEach(jd => {
+    const { c0, r0, n } = jd;
+    const lp = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([[c0, r0], [c0 + n, r0], [c0 + n, r0 + n], [c0, r0 + n]].map(([c, l]) => new THREE.Vector3(...xy(c, l), 0))),
+      new THREE.LineBasicMaterial({ color: 0xffffff, depthTest: false }));
+    lp.renderOrder = 11; retG.push(lp); gGeral.add(lp);
+  });
+}
+function atualizarGeral() {
+  const n = M.Wb * M.Hb, P = G['prof' + S.ano], plano = S.alt === 'plano';
+  const pos = geoG.attributes.position.array, col = geoG.attributes.color.array, c = new THREE.Color();
+  for (let k = 0; k < n; k++) {
+    pos[3 * k + 2] = plano ? 0 : P[k] * M.d_passo;
+    corBloco(k, c); col[3 * k] = c.r; col[3 * k + 1] = c.g; col[3 * k + 2] = c.b;
+  }
+  geoG.attributes.position.needsUpdate = true; geoG.attributes.color.needsUpdate = true;
+  geoG.computeVertexNormals(); geoG.computeBoundingSphere();
+  escGeral.scale.z = S.ex.geral;
+  construirRede(gGeral, null);
+}
+function pickGeral(ray) {
+  const o = ray.origin, d = ray.direction; if (d.z >= 0) return null;
+  const P = G['prof' + S.ano], ex = S.ex.geral, plano = S.alt === 'plano', topo = M.d_cap * ex;
+  const t0 = Math.max(0, (o.z - topo) / -d.z), t1 = (o.z + 3) / -d.z, passos = 600, p = new THREE.Vector3();
+  for (let s = 0; s <= passos; s++) {
+    p.copy(d).multiplyScalar(t0 + (t1 - t0) * s / passos).add(o);
+    const j = Math.floor((p.x / M.pix + M.W / 2) / M.bloco), i = Math.floor((M.H / 2 - p.y / M.pix) / M.bloco);
+    if (i < 0 || j < 0 || i >= M.Hb || j >= M.Wb) continue;
+    const k = i * M.Wb + j; if (!G.dentro[k]) continue;
+    if (p.z <= (plano ? 0 : P[k] * M.d_passo * ex) + 1) return k;
+  }
+  return null;
+}
+
+// ---------- rede de conectividade ----------
+let esferas = [];
+const geoEsf = new THREE.SphereGeometry(1, 16, 12);
+function construirRede(alvo, janela) {
+  // remove rede anterior deste alvo
+  const velha = alvo.userData.rede; if (velha) { descarta(velha); alvo.remove(velha); }
+  esferas = [];   // só um modo fica visível por vez
+  if (!S.rede) { alvo.userData.rede = null; return; }
+  const anos = janela && S.comparar ? ['2014', '2024'] : [S.ano];
+  const grupo = new THREE.Group(); alvo.userData.rede = grupo; alvo.add(grupo);
+  anos.forEach((y, ia) => {
+    const R = D.rede[y], nos = R.nos;
+    let ox = 0, filtro = () => true, toXY, escR, Zn;
+    if (janela) {
+      const { jd, passo } = janela; ox = S.comparar ? (ia - 0.5) * passo : 0;
+      const n = jd.n, m = 0;
+      filtro = no => no[0] >= jd.c0 - m && no[0] < jd.c0 + n + m && no[1] >= jd.r0 - m && no[1] < jd.r0 + n + m;
+      toXY = no => [ox + (no[0] - jd.c0 - n / 2) * M.pix, (n / 2 - (no[1] - jd.r0)) * M.pix];
+      escR = a => 14 * Math.pow(a, 0.3); Zn = 1.35 * M.d_cap * S.ex.janela + 180;
+    } else {
+      toXY = no => xy(no[0], no[1]); escR = a => 85 * Math.pow(a, 0.3); Zn = 1.3 * M.d_cap * S.ex.geral + 2500;
+    }
+    const sel = []; nos.forEach((no, k) => { if (filtro(no)) sel.push(k); });
+    const pos = {}; sel.forEach(k => pos[k + 1] = toXY(nos[k]));
+    // esferas
+    const im = new THREE.InstancedMesh(geoEsf, new THREE.MeshLambertMaterial({ color: 0xffffff }), sel.length);
+    const mtx = new THREE.Matrix4(), c = new THREE.Color();
+    sel.forEach((k, q) => {
+      const [x, yy] = pos[k + 1], r = escR(nos[k][2]);
+      mtx.makeScale(r, r, r).setPosition(x, yy, Zn); im.setMatrixAt(q, mtx);
+      im.setColorAt(q, rampa(impT(nos[k][3]), c));
+    });
+    im.userData = { ano: y, sel }; grupo.add(im); esferas.push(im);
+    // hastes até o chão
+    const hp = new Float32Array(sel.length * 6);
+    sel.forEach((k, q) => { const [x, yy] = pos[k + 1]; hp.set([x, yy, 0, x, yy, Zn], 6 * q); });
+    const gh = new THREE.BufferGeometry(); gh.setAttribute('position', new THREE.BufferAttribute(hp, 3));
+    grupo.add(new THREE.LineSegments(gh, new THREE.LineBasicMaterial({ color: 0x9fb3aa, transparent: true, opacity: 0.18 })));
+    // ligações em arco
+    const SEG = 10, lp = [], lc = [], cf = C('#2a3833'), cq = C('#f4dc9c');
+    for (const [i, j, d] of R.lig) {
+      const a = pos[i], b = pos[j]; if (!a || !b) continue;
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]), lift = Math.min(0.12 * len, janela ? 500 : 2500);
+      const p = Math.exp(-Math.LN2 * d / M.d_focal); c.copy(cf).lerp(cq, Math.pow(p, 0.6));
+      for (let s = 0; s < SEG; s++) for (const t of [s / SEG, (s + 1) / SEG]) {
+        lp.push(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, Zn + 4 * lift * t * (1 - t)); lc.push(c.r, c.g, c.b);
+      }
+    }
+    const gl = new THREE.BufferGeometry();
+    gl.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3)); gl.setAttribute('color', new THREE.Float32BufferAttribute(lc, 3));
+    grupo.add(new THREE.LineSegments(gl, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.6 })));
+    if (y === '2024') sel.forEach(k => { const r = nos[k][8]; if (r) addRotulo(r, new THREE.Vector3(...pos[k + 1], Zn + escR(nos[k][2])), 'con', null, 'rede'); });
+  });
+}
+
+// ---------- janela 3D ----------
+const geoCubo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0, 0.5);
+let infoJanela = null;
+function blocos(J, y, ox, n) {
+  const A = J[y], mud = J.mud, outro = y === '2024' ? '2014' : '2024';
+  const cells = [];
+  for (let k = 0; k < n * n; k++) {
+    const mo = A.morf[k]; if (mo === ND) continue;
+    if (mo > 0) cells.push([k, 0]);
+    else if (S.cor === 'mud' && (mud[k] === 1 || mud[k] === 2)) cells.push([k, 1]);   // marca o que mudou
+  }
+  const im = new THREE.InstancedMesh(geoCubo, new THREE.MeshLambertMaterial({ color: 0xffffff }), cells.length);
+  const mtx = new THREE.Matrix4(), c = new THREE.Color();
+  cells.forEach(([k, tipo], q) => {
+    const i = Math.floor(k / n), j = k % n, x = ox + (j - n / 2 + 0.5) * M.pix, yy = (n / 2 - i - 0.5) * M.pix;
+    const h = tipo ? 6 : (S.alt === 'plano' ? 8 : Math.max(A.prof[k] * M.d_passo, 8));
+    mtx.makeScale(M.pix, M.pix, h).setPosition(x, yy, 0); im.setMatrixAt(q, mtx);
+    if (S.cor === 'morf') c.set(MORF[A.morf[k]]);
+    else if (S.cor === 'imp') { const v = A.imp[k]; v ? rampa(impT(decImp(v)), c) : c.set('#4b5f56'); }
+    else {
+      if (tipo) c.set(mud[k] === 1 ? PERDA : GANHO).multiplyScalar(0.75);
+      else if (mud[k] === 1) c.set(PERDA); else if (mud[k] === 2) c.set(GANHO); else c.set('#3d6b58');
+    }
+    im.setColorAt(q, c);
+  });
+  im.userData = { ano: y, ox };
+  return im;
+}
+async function construirJanela() {
+  descarta(gJanela); gJanela.clear(); gJanela.userData.rede = null; esferas = []; limparRotulos();
+  const w = S.janela, jd = D.janelas[w], J = await dadosJanela(w), n = jd.n;
+  const wx = n * M.pix, passo = wx * 1.18;
+  const anos = S.comparar ? ['2014', '2024'] : [S.ano];
+  const esc = new THREE.Group(); esc.scale.z = S.ex.janela; gJanela.add(esc); gJanela.userData.esc = esc;
+  anos.forEach((y, ia) => {
+    const ox = S.comparar ? (ia - 0.5) * passo : 0;
+    const placa = new THREE.Mesh(new THREE.PlaneGeometry(wx, wx), new THREE.MeshBasicMaterial({ color: css('--matriz') }));
+    placa.position.set(ox, 0, -0.5); gJanela.add(placa);
+    const borda = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => new THREE.Vector3(ox + a * wx / 2, b * wx / 2, 0))),
+      new THREE.LineBasicMaterial({ color: 0xf4dc9c, transparent: true, opacity: 0.6 }));
+    gJanela.add(borda);
+    esc.add(blocos(J, y, ox, n));
+    if (S.comparar) addRotulo(y, new THREE.Vector3(ox, wx / 2 + 150, 0), 'prod');
+  });
+  infoJanela = { jd, J, passo };
+  construirRede(gJanela, { jd, passo });
+  statsJanela();
+}
+
+// ---------- rótulos ----------
+const camadaRot = $('rotulos'); let rotulos = [];
+function addRotulo(html, v, cls = '', clique, grupo = '') {
+  const el = document.createElement('div'); el.className = 'rotulo ' + cls; el.innerHTML = html;
+  if (clique) { el.classList.add('clic'); el.addEventListener('click', clique); }
+  camadaRot.appendChild(el); rotulos.push({ el, v, grupo });
+}
+function limparRotulos(grupo) {
+  rotulos = rotulos.filter(r => { if (grupo === undefined || r.grupo === grupo) { r.el.remove(); return false; } return true; });
+}
+const vtmp = new THREE.Vector3();
+function moverRotulos() {
+  for (const r of rotulos) {
+    vtmp.copy(r.v).project(camera);
+    if (vtmp.z > 1) { r.el.style.display = 'none'; continue; }
+    r.el.style.display = '';
+    r.el.style.transform = `translate(${(vtmp.x * .5 + .5) * innerWidth}px,${(-vtmp.y * .5 + .5) * innerHeight}px) translate(-50%,-120%)`;
+  }
+}
+
+// ---------- painéis ----------
+function painelCorredor() {
+  const N = D.numeros, v = (a, b) => 100 * (b - a) / a;
+  const linhas = [
+    ['Vegetação natural (ha)', N.habitat, 0],
+    ['Núcleo (% da vegetação)', N.nucleo_pct, 1],
+    ['Fragmentos ≥ 10 ha', N.nos, 0],
+    [`ECA a ${fmt(M.d_focal, 0)} m (ha)`, N.eca1500, 0],
+  ];
+  let h = '<thead><tr><th></th><th>2014</th><th>2024</th><th>Δ</th></tr></thead><tbody>';
+  for (const [rot, o, d] of linhas) {
+    const dv = v(o['2014'], o['2024']), u = rot.startsWith('Núcleo') ? ' p.p.' : '%';
+    const delta = rot.startsWith('Núcleo') ? o['2024'] - o['2014'] : dv;
+    h += `<tr><td>${rot}</td><td class="${S.ano === '2014' ? 'atual' : ''}">${fmt(o['2014'], d)}</td><td class="${S.ano === '2024' ? 'atual' : ''}">${fmt(o['2024'], d)}</td>
+      <td class="${delta < 0 ? 'neg' : 'pos'}">${delta > 0 ? '+' : ''}${fmt(delta, 1)}${u}</td></tr>`;
+  }
+  $('tb-corredor').innerHTML = h + '</tbody>';
+  const ev = Object.values(N.eca_var_pct);
+  $('eca-faixa').innerHTML = `ECA (área conectada equivalente) caiu ${fmt(Math.max(...ev), 1)}% a ${fmt(Math.min(...ev), 1)}% nas distâncias de 200 a 5.000 m, contra ${fmt(v(N.habitat['2014'], N.habitat['2024']), 1)}% de vegetação. Perda bruta: ${fmt(N.perda_bruta_ha, 0)} ha (${fmt(N.savana_pct_perda, 0)}% em savana).`;
+  // gráfico índice 2014 = 100
+  const s = N.serie, anos = s.anos, iH = s.habitat_ha.map(x => 100 * x / s.habitat_ha[0]), iE = s.eca1500_ha.map(x => 100 * x / s.eca1500_ha[0]);
+  const lo = Math.floor(Math.min(...iH, ...iE) - 1), hi = 101, Wg = 280, Hg = 96, px = i => 26 + i * (Wg - 34) / (anos.length - 1), py = v => 8 + (hi - v) / (hi - lo) * (Hg - 24);
+  const linha = (arr, cor) => `<polyline fill="none" stroke="${cor}" stroke-width="2.2" stroke-linejoin="round" points="${arr.map((v, i) => px(i).toFixed(1) + ',' + py(v).toFixed(1)).join(' ')}"/>`;
+  const grade = [lo, Math.round((lo + hi) / 2), 100].map(v => `<line x1="26" x2="${Wg - 8}" y1="${py(v)}" y2="${py(v)}" stroke="currentColor" stroke-opacity=".12"/><text x="22" y="${py(v) + 3}" font-size="9" text-anchor="end" fill="currentColor" fill-opacity=".6">${v}</text>`).join('');
+  $('grafico').innerHTML = `<svg viewBox="0 0 ${Wg} ${Hg}" style="color:var(--tx)">${grade}${linha(iH, '#8cc35a')}${linha(iE, '#f39a3b')}
+    <text x="26" y="${Hg - 3}" font-size="9" fill="currentColor" fill-opacity=".6">${anos[0]}</text><text x="${Wg - 8}" y="${Hg - 3}" font-size="9" text-anchor="end" fill="currentColor" fill-opacity=".6">${anos[anos.length - 1]}</text>
+    <text x="${px(anos.length - 1) - 2}" y="${py(iH[iH.length - 1]) - 5}" font-size="9.5" text-anchor="end" fill="#8cc35a" font-weight="700">vegetação</text>
+    <text x="${px(anos.length - 1) - 2}" y="${py(iE[iE.length - 1]) + 12}" font-size="9.5" text-anchor="end" fill="#f39a3b" font-weight="700">ECA ${fmt(M.d_focal, 0)} m</text></svg>`;
+  const mx = Math.max(...N.perda_borda.map(r => r[1]));
+  $('barras').innerHTML = N.perda_borda.map(([cl, v]) => `<div class="barra"><span>${cl.replace('<=', '≤ ')} m</span><i style="width:${Math.max(2, 100 * v / mx)}%"></i><span>${fmt(v, 1)}%</span></div>`).join('');
+  $('tit-proc').textContent = `Processos espaciais (${N.celulas} células de 5 km)`;
+  const ord = Object.entries(N.processos).sort((a, b) => b[1] - a[1]);
+  $('procs').innerHTML = ord.map(([k, v]) => `<div><span><i style="background:${PROC[PROC_CHAVE[k]][1]}"></i>${PROC[PROC_CHAVE[k]][0]}</span><b>${v}</b></div>`).join('');
+}
+function statsJanela() {
+  const box = $('st-janela');
+  if (S.modo !== 'janela' || !infoJanela) { box.innerHTML = ''; return; }
+  const { jd, J } = infoJanela, n = jd.n, ha = M.pix * M.pix / 1e4, est = {};
+  for (const y of ['2014', '2024']) {
+    const c = [0, 0, 0, 0], nos = new Set();
+    for (let k = 0; k < n * n; k++) { const m = J[y].morf[k]; if (m === ND) continue; c[m]++; if (J[y].no[k]) nos.add(J[y].no[k]); }
+    est[y] = { hab: (c[1] + c[2] + c[3]) * ha, nuc: c[1] * ha, bor: c[2] * ha, ilh: c[3] * ha, nos: nos.size };
+  }
+  let perda = 0, ganho = 0; for (let k = 0; k < n * n; k++) { if (J.mud[k] === 1) perda++; else if (J.mud[k] === 2) ganho++; }
+  const lin = (rot, f, d = 0) => `<tr><td>${rot}</td><td class="${S.ano === '2014' ? 'atual' : ''}">${fmt(f('2014'), d)}</td><td class="${S.ano === '2024' ? 'atual' : ''}">${fmt(f('2024'), d)}</td></tr>`;
+  box.innerHTML = `<h2>Janela ${S.janela + 1} · ${jd.nome}</h2>
+    <p class="fonte" style="margin-top:-4px">${fmt(n * n * ha, 0)} ha · processo da célula de 5 km: ${jd.proc ? PROC[jd.proc][0] : '–'}</p>
+    <table><thead><tr><th>nesta janela (ha)</th><th>2014</th><th>2024</th></tr></thead><tbody>
+    ${lin('Vegetação natural', y => est[y].hab)}${lin('Núcleo', y => est[y].nuc)}${lin('Borda', y => est[y].bor)}${lin('Ilhota', y => est[y].ilh)}
+    ${lin('Fragmentos ≥ 10 ha (n)', y => est[y].nos)}</tbody></table>
+    <p class="fonte">Perda 2014–2024: ${fmt(perda * ha, 1)} ha · ganho: ${fmt(ganho * ha, 1)} ha. Calculado no navegador a partir de data/A_mapas.npz.</p>`;
+}
+function legenda() {
+  const y = S.ano, alt = S.alt === 'prof';
+  const nomes = { morf: 'Morfologia', mud: 'Mudança 2014 → 2024', imp: y === '2024' ? 'Importância dPC 2024 (%)' : 'Importância 2014: intra + fluxo (%)', proc: 'Processo espacial (Bogaert)' };
+  $('leg-nome').textContent = nomes[S.cor];
+  $('leg-ano').textContent = S.modo === 'janela' && S.comparar ? '2014 · 2024' : y;
+  const sw = (cor, txt) => `<span><i class="sw" style="background:${cor}"></i>${txt}</span>`;
+  let h = '';
+  if (S.cor === 'morf') h = `<div id="leg-cat">${[1, 2, 3, 0].map(k => sw(k ? MORF[k] : css('--matriz'), MORF_NOME[k])).join('')}</div>`;
+  else if (S.cor === 'mud') h = `<div id="leg-cat">${sw(PERDA, 'perda (natural → antrópico)')}${sw(GANHO, 'ganho')}${sw('#3d6b58', 'vegetação mantida')}${sw(css('--matriz'), 'matriz')}</div>`;
+  else if (S.cor === 'proc') h = `<div id="leg-cat">${Object.values(PROC).map(([t, c]) => sw(c, t)).join('')}</div>`;
+  else h = `<div id="leg-barra" style="background:linear-gradient(90deg,${RAMPA_HEX.join(',')})"></div><div id="leg-ticks">${['0,0001', '0,001', '0,01', '0,1', '1', '10', '100'].map(t => `<span>${t}</span>`).join('')}</div>`;
+  $('leg-cont').innerHTML = h;
+  const ex = [];
+  ex.push(alt ? '<span>altura = distância à borda (satura em 1 km)</span>' : '<span>sem relevo</span>');
+  if (S.rede) ex.push(`<span><i class="sw" style="background:linear-gradient(90deg,${RAMPA_HEX[1]},${RAMPA_HEX[5]});border-radius:50%"></i>esferas = fragmentos ≥ 10 ha · linhas claras = ligações curtas</span>`);
+  $('leg-extra').innerHTML = ex.join('');
+}
+
+// ---------- dica ----------
+const dica = $('dica'), ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let mouseXY = null, ultimaPick = 0, sujo = false;
+renderer.domElement.addEventListener('pointermove', e => { mouseXY = [e.clientX, e.clientY]; sujo = true; });
+renderer.domElement.addEventListener('pointerleave', () => { mouseXY = null; dica.style.display = 'none'; });
+function mostrarDica(html) {
+  dica.innerHTML = html; dica.style.display = 'block';
+  const [x, y] = mouseXY, w = dica.offsetWidth, h = dica.offsetHeight;
+  dica.style.left = Math.min(x + 16, innerWidth - w - 8) + 'px'; dica.style.top = Math.min(y + 16, innerHeight - h - 8) + 'px';
+}
+function dicaNo(no, ano) {
+  const linhas = [['Área', fmt(no[2], 1) + ' ha'], [ano === '2024' ? 'dPC total' : 'intra + fluxo', fmtImp(no[3])]];
+  if (no[4] != null) linhas.push(['dPC intra', fmtImp(no[5])], ['dPC fluxo', fmtImp(no[6])], ['dPC conector', fmtImp(no[4])]);
+  if (no[7] != null) linhas.push(['Perdido até 2024', fmt(100 * no[7], 1) + '%']);
+  return `<h3>Fragmento ≥ 10 ha · ${ano}${no[8] ? ' · conector ' + no[8] : ''}</h3><table><tbody>${linhas.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('')}</tbody></table>`;
+}
+function pick() {
+  if (!mouseXY) return;
+  mouse.set(mouseXY[0] / innerWidth * 2 - 1, -mouseXY[1] / innerHeight * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hitE = esferas.length ? ray.intersectObjects(esferas, false)[0] : null;
+  if (hitE) { const u = hitE.object.userData; mostrarDica(dicaNo(D.rede[u.ano].nos[u.sel[hitE.instanceId]], u.ano)); return; }
+  if (S.modo === 'geral') {
+    const k = pickGeral(ray.ray); if (k == null) { dica.style.display = 'none'; return; }
+    const p = v => fmt(100 * v / 250, 1) + '%', y = S.ano, imp = decImp(G['imp' + y][k]);
+    mostrarDica(`<h3>Bloco de ${fmt(M.bloco * M.pix, 0)} m · ${y}</h3><table><tbody>
+      <tr><td>Núcleo</td><td>${p(G['nucleo' + y][k])}</td></tr><tr><td>Borda</td><td>${p(G['borda' + y][k])}</td></tr>
+      <tr><td>Ilhota</td><td>${p(G['ilhota' + y][k])}</td></tr><tr><td>Distância média à borda</td><td>${fmt(G['prof' + y][k] * M.d_passo, 0)} m</td></tr>
+      <tr><td>Perda 2014–2024</td><td>${p(G.perda[k])}</td></tr><tr><td>Ganho</td><td>${p(G.ganho[k])}</td></tr>
+      <tr><td>Maior importância</td><td>${imp ? fmtImp(imp) : '–'}</td></tr><tr><td>Processo (5 km)</td><td>${G.proc[k] ? PROC[G.proc[k]][0] : '–'}</td></tr></tbody></table>`);
+    return;
+  }
+  if (!infoJanela) return;
+  const pt = new THREE.Vector3();
+  if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), pt)) { dica.style.display = 'none'; return; }
+  const { jd, J, passo } = infoJanela, n = jd.n;
+  const ia = S.comparar ? (pt.x < 0 ? 0 : 1) : 0, y = S.comparar ? ['2014', '2024'][ia] : S.ano, ox = S.comparar ? (ia - 0.5) * passo : 0;
+  const j = Math.floor((pt.x - ox) / M.pix + n / 2), i = Math.floor(n / 2 - pt.y / M.pix);
+  if (i < 0 || j < 0 || i >= n || j >= n) { dica.style.display = 'none'; return; }
+  const k = i * n + j, mo = J[y].morf[k]; if (mo === ND) { dica.style.display = 'none'; return; }
+  const mud = J.mud[k], no = J[y].no[k];
+  let h = `<h3>Célula de 30 m · ${y}</h3><table><tbody><tr><td>Classe</td><td>${MORF_NOME[mo]}</td></tr>`;
+  if (mo) h += `<tr><td>Distância à borda</td><td>${J[y].prof[k] * M.d_passo >= M.d_cap ? '≥ 1.000' : fmt(J[y].prof[k] * M.d_passo, 0)} m</td></tr>`;
+  h += `<tr><td>2014 → 2024</td><td>${mud === 1 ? 'perdida' : mud === 2 ? 'ganha' : 'sem mudança'}</td></tr></tbody></table>`;
+  if (no) h += dicaNo(D.rede[y].nos[no - 1], y).replace('<h3>', '<h3 style="margin-top:6px">');
+  else if (mo) h += '<p class="fonte" style="margin:4px 0 0">Fragmento &lt; 10 ha (fora do grafo).</p>';
+  mostrarDica(h);
+}
+
+// ---------- câmera e modos ----------
+function enquadrar() {
+  if (S.modo === 'geral') {
+    const L = M.W * M.pix;
+    camera.near = 50; camera.far = 3e6; controls.minDistance = 2000; controls.maxDistance = 6e5;
+    controls.target.set(0, -0.04 * L, 0); camera.position.set(-0.2 * L, -0.95 * L, 0.6 * L);
+  } else {
+    const wx = D.janelas[S.janela].n * M.pix, L = S.comparar ? 2.3 * wx : wx;
+    camera.near = 1; camera.far = 2e5; controls.minDistance = 30; controls.maxDistance = 6 * L;
+    controls.target.set(0, 0, 0); camera.position.set(-0.3 * L, -1.0 * L, 0.6 * L);
+  }
+  camera.updateProjectionMatrix(); controls.update();
+}
+function rotulosGeral() {
+  limparRotulos();
+  D.janelas.forEach((jd, w) => addRotulo(String(w + 1), new THREE.Vector3(...xy(jd.c0 + jd.n / 2, jd.r0), 0), '', () => irJanela(w)));
+}
+async function aplicarModo() {
+  const g = S.modo === 'geral';
+  gGeral.visible = g; gJanela.visible = !g;
+  document.querySelectorAll('#modo button').forEach(b => b.classList.toggle('on', b.dataset.modo === S.modo));
+  $('bloco-janela').style.display = g ? 'none' : '';
+  $('bt-proc').style.display = g ? '' : 'none';
+  if (!g && S.cor === 'proc') { S.cor = 'morf'; marcar('cor', 'c', 'morf'); }
+  const ex = $('ex'); ex.max = g ? 12 : 3; ex.step = g ? 0.5 : 0.05; ex.value = S.ex[S.modo]; $('ex-v').textContent = '×' + S.ex[S.modo];
+  document.querySelectorAll('.janela').forEach((b, w) => b.classList.toggle('on', !g && w === S.janela));
+  if (g) { rotulosGeral(); atualizarGeral(); statsJanela(); }
+  else await construirJanela();
+  painelCorredor(); legenda(); enquadrar();
+}
+async function irJanela(w) { S.janela = w; S.modo = 'janela'; await aplicarModo(); }
+async function redesenhar() {
+  if (S.modo === 'geral') { limparRotulos('rede'); atualizarGeral(); } else await construirJanela();
+  painelCorredor(); legenda();
+}
+function marcar(id, attr, v) { $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset[attr] === v)); }
+function chips(id, attr, chave) {
+  $(id).addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    S[chave] = b.dataset[attr]; marcar(id, attr, S[chave]); await redesenhar();
+  });
+}
+chips('ano', 'y', 'ano'); chips('cor', 'c', 'cor'); chips('alt', 'a', 'alt');
+$('modo').addEventListener('click', async e => { const b = e.target.closest('button'); if (!b || b.dataset.modo === S.modo) return; S.modo = b.dataset.modo; await aplicarModo(); });
+let tEx;
+$('ex').addEventListener('input', e => {
+  const v = +e.target.value; S.ex[S.modo] = v; $('ex-v').textContent = '×' + v;
+  if (S.modo === 'geral') escGeral.scale.z = v; else if (gJanela.userData.esc) gJanela.userData.esc.scale.z = v;
+  clearTimeout(tEx); tEx = setTimeout(() => {   // a rede flutua acima do relevo: reposiciona
+    limparRotulos('rede');
+    if (S.modo === 'geral') construirRede(gGeral, null); else if (infoJanela) construirRede(gJanela, { jd: infoJanela.jd, passo: infoJanela.passo });
+  }, 150);
+});
+$('comparar').addEventListener('change', async e => { S.comparar = e.target.checked; await construirJanela(); legenda(); enquadrar(); });
+$('tg-rede').addEventListener('change', async e => { S.rede = e.target.checked; await redesenhar(); });
+$('tg-lim').addEventListener('change', e => { S.lim = e.target.checked; limG.forEach(l => l.visible = S.lim); });
+$('tg-giro').addEventListener('change', e => { controls.autoRotate = e.target.checked; });
+$('bt-reset').addEventListener('click', enquadrar);
+$('bt-png').addEventListener('click', () => {
+  renderer.setClearColor(new THREE.Color(css('--bg')), 1); renderer.render(scene, camera);
+  const a = document.createElement('a');
+  a.download = `FragConn_3D_${S.modo === 'geral' ? 'corredor' : 'janela' + (S.janela + 1)}_${S.modo === 'janela' && S.comparar ? '2014-2024' : S.ano}_${S.cor}.png`;
+  a.href = renderer.domElement.toDataURL('image/png'); a.click(); renderer.setClearColor(0x000000, 0);
+});
+$('bt-tema').addEventListener('click', async () => {
+  const escuro = css('--bg') === '#08110f';
+  document.documentElement.dataset.theme = escuro ? 'light' : 'dark';
+  try { localStorage.setItem('fragconn3d-tema', document.documentElement.dataset.theme); } catch (e) {}
+  await redesenhar();
+});
+$('bt-painel').addEventListener('click', () => { $('pnl-dir').classList.toggle('aberto'); document.body.classList.toggle('dir-aberto'); });
+try { const t = localStorage.getItem('fragconn3d-tema'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+async function iniciar() {
+  $('dfoc').textContent = fmt(M.d_focal, 0);
+  for (const [k, v] of Object.entries(D.geral)) G[k] = await dz(v);
+  $('lista-janelas').innerHTML = D.janelas.map((jd, w) =>
+    `<button class="janela" data-w="${w}"><b>${w + 1}</b><span>${jd.nome}<small>perda 2014–2024: ${fmt(jd.perda_ha, 1)} ha · ${jd.proc ? PROC[jd.proc][0] : ''}</small></span></button>`).join('');
+  $('lista-janelas').addEventListener('click', e => { const b = e.target.closest('.janela'); if (b) irJanela(+b.dataset.w); });
+  iniciarGeral();
+  await aplicarModo();
+  $('carregando').classList.add('fim');
+}
+function animar(t) {
+  requestAnimationFrame(animar);
+  controls.update();
+  if (sujo && t - ultimaPick > 70) { ultimaPick = t; sujo = false; pick(); }
+  renderer.render(scene, camera); moverRotulos();
+}
+controls.addEventListener('change', () => { if (mouseXY) sujo = true; });
+iniciar().then(() => requestAnimationFrame(animar)).catch(err => { $('carregando').textContent = 'Erro ao carregar: ' + err.message; console.error(err); });
+</script>
+</body>
+</html>
