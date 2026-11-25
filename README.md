@@ -24,6 +24,8 @@ Visualização 3D interativa (Three.js) da **fragmentação e da conectividade d
 | Modo / camada | Conteúdo |
 |---|---|
 | **Mapa** | imagem de satélite do planeta inteiro (Esri World Imagery, via MapLibre GL). A página abre no globo e voa até o corredor, que aparece inteiro em 3D por cima (Three.js dentro do mapa), com opacidade ajustável; o exagero vertical diminui sozinho ao aproximar. A grade UTM 21S é assentada no Web Mercator por uma malha de controle de 17 × 17 pontos calculada com pyproj (erro < 1 m). Clicar numa janela no mapa voa até ela e abre a cena 3D no canto inferior direito. |
+| **Terreno real** | modelo digital de elevação (SRTM e outras fontes, AWS Terrain Tiles, formato Terrarium) com sombreamento e céu atmosférico; o corredor fica assentado sobre a cota do terreno (exagero ajustável); a rede de conectividade acompanha o relevo. |
+| **Modo apresentação** | tour guiado em 8 etapas, com voos de câmera e legendas que trazem os números do estudo: planeta → corredor sobre o relevo → núcleo, borda e ilhota → perda 2014–2024 → conectividade (ECA) com a rede → processos de Bogaert → conector C3 em 2014 × 2024 → perda junto à borda. **Gravar vídeo** salva o tour inteiro em MP4 (H.264) no Chrome e no Edge, ou WebM nos outros navegadores, pronto para slides. |
 | **Corredor** | blocos de 8 × 8 células (240 m). A altura é a distância média à borda (satura em 1 km): núcleos grandes viram platôs, e bordas e ilhotas ficam rentes ao chão. |
 | **Cor** | **morfologia** (núcleo > 90 m da borda, borda ≤ 90 m, ilhota = fragmento sem núcleo), **mudança** 2014 → 2024 (perda e ganho), **importância** do fragmento (dPC) ou **processo espacial** de Bogaert et al. (2004) em células de 5 km. |
 | **Ano** | 2014 ou 2024. |
